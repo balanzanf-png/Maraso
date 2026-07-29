@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MaraSo - Coffre</title>
+
+  <!-- FIREBASE -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+  <style>
+    :root{--bg:#0A0E1A;--card:#0F1424;--border:#1E293B;--text:#FFFFFF;--text2:#94A3B8;--blue:#3B82F6;--green:#10B981;--red:#FF3B30;--yellow:#F59E0B}
+    *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,Arial,sans-serif}
+    body{background:var(--bg);color:var(--text);padding-bottom:80px}
+.header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:var(--card);border-bottom:1px solid var(--border)}
+.maraso{display:flex;align-items:center;gap:8px;font-weight:700;font-size:18px}
+.maraso-icon{width:22px;height:22px}
+.admin-badge{background:#EF4444;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
+.avatar{width:34px;height:34px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer}
+.main{padding:20px;text-align:center}
+.cloud-lock{width:100px;height:100px;margin:20px auto;background:radial-gradient(circle,rgba(59,130,246,0.25) 0%, transparent 70%);display:flex;align-items:center;justify-content:center}
+.cloud-lock svg{width:90px;height:90px;filter:drop-shadow(0 0 25px rgba(59, 130, 246, 0.7))}
+    h1{font-size:36px;margin-bottom:8px}
+.main p{color:var(--text2);margin-bottom:15px}
+.storage-free{color:var(--green);font-weight:700;font-size:16px;margin-bottom:15px}
+.buttons{display:flex;gap:15px;max-width:400px;margin:0 auto 30px}
+.btn{flex:1;padding:15px;border-radius:14px;font-weight:700;border:none;cursor:pointer;font-size:15px}
+.btn-primary{background:linear-gradient(135deg,var(--blue),#2563EB);color:white}
+.btn-secondary{background:var(--card);border:1px solid var(--border);color:var(--text)}
+.btn-danger{background:var(--red);color:white}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-icon{background:none;border:none;color:var(--text);font-size:16px;padding:5px;cursor:pointer;margin-left:5px}
+.robot-thiero-fixed{position:fixed;bottom:90px;right:15px;display:flex;flex-direction:column;align-items:center;gap:4px;z-index:999;cursor:pointer}
+.robot-thiero{width:55px;height:55px;background:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:bouge 2s infinite;box-shadow:0 4px 15px rgba(59,130,246,0.4);font-size:28px}
+.robot-thiero:active{transform:scale(0.9)}
+@keyframes bouge{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.nom-thiero{font-size:10px;font-weight:700;color:var(--blue)}
+.premium-card{background:linear-gradient(135deg,#1E40AF,var(--blue));border-radius:18px;padding:20px;max-width:400px;margin:0 auto 16px;cursor:pointer}
+.premium-card h3{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;font-size:17px;color:white}
+.plan-badge{background:var(--green);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700}
+.type-cards{display:flex;flex-direction:column;gap:12px;max-width:400px;margin:0 auto 90px}
+.type-card{display:flex;align-items:center;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer}
+.sidebar{display:flex;justify-content:space-around;align-items:center;background:var(--card);border-top:1px solid var(--border);padding:8px 0;position:fixed;bottom:0;width:100%;height:70px;z-index:100}
+.sidebar-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;flex:1;color:var(--text2)}
+.sidebar-item.active{color:var(--blue)}
+.sidebar-icon{font-size:24px}
+.sidebar-label{font-size:10px;font-weight:600}
+.menu-plus-item{display:flex;align-items:center;padding:14px;border-radius:12px;margin-bottom:8px;cursor:pointer;background:var(--card);border:1px solid var(--border)}
+.menu-plus-item:active{transform:scale(0.98);background:#1E3A8A}
+.storage-bar{width:100%;height:10px;background:var(--border);border-radius:10px;overflow:hidden;margin:12px 0;display:flex}
+.storage-row{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:2000}
+.modal-content{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:25px;width:90%;max-width:420px;max-height:80vh;overflow-y:auto}
+.plan-option{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer}
+.plan-option.popular{border-color:#F59E0B}
+.plan-price{font-size:24px;font-weight:700;color:var(--blue)}
+.file-item{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)}
+.file-item:hover{background:#1E3A8A;border-radius:8px}
+.lang-input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);margin:10px 0;font-size:15px;outline:none}
+.lang-input::placeholder{color:var(--text2)}
+.lang-list{max-height:350px;overflow-y:auto;margin-top:10px}
+.input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);margin:10px 0;font-size:15px}
+.error{color:var(--red);font-size:12px;text-align:left;margin:-8px 0 8px 0}
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#1E40AF;padding:14px 20px;border-radius:12px;display:none;z-index:1000}
+.hidden{display:none!important}
+.user-detail{background:#1E3A8A;padding:10px;border-radius:8px;margin:5px 0;text-align:left}
+.ad-banner{background:linear-gradient(90deg,#F59E0B,#EF4444);padding:12px;border-radius:12px;margin:0 auto 20px;max-width:400px;text-align:center;font-weight:700;cursor:pointer;animation:clignote 2s infinite}
+    @keyframes clignote{0%,100%{opacity:1}50%{opacity:0.7}}
+.profil-info{background:var(--border);padding:15px;border-radius:12px;margin:15px 0;text-align:left}
+.search-bar{padding:10px 15px;background:var(--card);margin:15px auto;max-width:400px;border-radius:10px;display:flex;gap:10px;border:1px solid var(--border)}
+.search-bar input{flex:1;border:none;background:transparent;outline:none;color:var(--text)}
+  </style>
+</head>
+<body>
+
+  <div id="authBlock" class="modal" style="display:flex">
+    <div class="modal-content">
+      <h3 style="text-align:center;margin-bottom:15px">🔒 Connexion MaraSo</h3>
+      <input type="text" id="loginUser" class="input" placeholder="Email ou Numéro" autocomplete="off">
+      <input type="password" id="loginPass" class="input" placeholder="Mot de passe" autocomplete="off">
+      <div id="passError" class="error hidden">8 caractères minimum</div>
+      <button class="btn btn-primary" onclick="login()">Entrer</button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:10px;font-size:12px" onclick="viderCache()">🗑️ Vider le cache si bug</button>
+    </div>
+  </div>
+
+  <div id="adminAuthBlock" class="modal">
+    <div class="modal-content">
+      <h3 style="text-align:center;margin-bottom:15px">🔐 Vérification Admin</h3>
+      <input type="password" id="adminPassCheck" class="input" placeholder="Mot de passe Admin" autocomplete="off">
+      <button class="btn btn-primary" onclick="verifierAdmin()">Vérifier</button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="adminAuthBlock.style.display='none'">Annuler</button>
+    </div>
+  </div>
+
+  <div id="appContent" class="hidden">
+    <div class="header">
+      <div class="maraso">
+        <svg class="maraso-icon" viewBox="0 0 200 200"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient></defs><g stroke="url(#g)" stroke-width="2.5" fill="none"><circle cx="100" cy="60" r="14"/><circle cx="78" cy="68" r="11"/><circle cx="122" cy="68" r="11"/><line x1="100" y1="60" x2="78" y2="68"/><line x1="100" y1="60" x2="122" y2="68"/></g><rect x="82" y="80" width="36" height="26" rx="5" fill="url(#g)"/><path d="M 100 76 V 68 C 100 64 96 64 96 68 V 76" stroke="url(#g)" stroke-width="2.5" fill="none"/></svg>
+        MaraSo
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span id="adminBadge" class="admin-badge hidden" onclick="demanderSecuriteAdmin()">ADMIN</span>
+        <div id="userAvatar" class="avatar" onclick="ouvrirProfil()"></div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="cloud-lock"><svg viewBox="0 0 200 200"><defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60A5FA"/><stop offset="100%" stop-color="#3B82F6"/></linearGradient></defs><g stroke="url(#g2)" stroke-width="3" fill="none"><circle cx="100" cy="65" r="22"/><circle cx="70" cy="80" r="18"/><circle cx="130" cy="80" r="18"/><line x1="100" y1="65" x2="70" y2="80"/><line x1="100" y1="65" x2="130" y2="80"/></g><rect x="75" y="105" width="50" height="38" rx="7" fill="url(#g2)"/><path d="M 100 95 V 82 C 100 74 90 74 90 82 V 95" stroke="url(#g2)" stroke-width="4" fill="none"/></svg></div>
+<h1>MaraSo</h1>
+      <p>Votre coffre-fort numérique personnel</p>
+      <div class="storage-free">📦 <span id="stockageUtilise">0 GB</span> / <span id="stockageTotal">10 GB</span> Gratuit + <span id="bonusUser">0</span> MB Bonus</div>
+
+      <div class="ad-banner" id="btnPubReward" onclick="showRewardedAd()">📢 Regarder pub: <span id="pubLeft">3</span>/3</div>
+      <div class="ad-banner" style="background:linear-gradient(90deg,#10B981,#059669)" id="btnParrain" onclick="copierLienParrain()">👥 Inviter 3 amis = +100MB</div>
+
+      <div class="search-bar"><input type="text" id="searchInput" placeholder="🔍 Rechercher un fichier..." onkeyup="recherFichier(this.value)"></div>
+
+      <div class="buttons">
+        <button class="btn btn-primary" id="btnTeleverser">➕ Téléverser</button>
+        <input type="file" id="inputFile" style="display:none" multiple>
+        <button class="btn btn-secondary" id="btnGererStockage">📊 Gérer Stockage</button>
+      </div>
+      <div class="premium-card" id="btnOuvrirPremium"><h3><span>🔥 Passer au Premium</span><span class="plan-badge" id="planType">GRATUIT</span></h3><p style="color:#DBEAFE;text-align:left">Débloquez plus de stockage</p><div style="text-align:center;margin-top:15px;color:white;font-weight:700">Voir les offres →</div></div>
+      <div class="type-cards">
+        <div class="type-card" onclick="ouvrirDetail('video')"><div style="width:44px;height:44px;border-radius:12px;background:var(--red);margin-right:14px;display:flex;align-items:center;justify-content:center">🎥</div><div style="flex:1;text-align:left"><div style="font-weight:700">Vidéos</div><div style="font-size:12px;color:var(--text2)" id="statVideo">0 GB • 0%</div></div><div style="text-align:right"><div style="font-weight:700" id="valVideo">0 GB</div><div style="font-size:12px;color:var(--text2)">Le plus gros</div></div><div style="font-size:20px;margin-left:10px">›</div></div>
+        <div class="type-card" onclick="ouvrirDetail('photo')"><div style="width:44px;height:44px;border-radius:12px;background:#007AFF;margin-right:14px;display:flex;align-items:center;justify-content:center">🖼️</div><div style="flex:1;text-align:left"><div style="font-weight:700">Photos</div><div style="font-size:12px;color:var(--text2)" id="statPhoto">0 GB • 0%</div></div><div style="text-align:right"><div style="font-weight:700" id="valPhoto">0 GB</div><div style="font-size:12px;color:var(--text2)">Moyen</div></div><div style="font-size:20px;margin-left:10px">›</div></div>
+        <div class="type-card" onclick="ouvrirDetail('file')"><div style="width:44px;height:44px;border-radius:10px;background:#5856D6;margin-right:14px;display:flex;align-items:center;justify-content:center">📄</div><div style="flex:1;text-align:left"><div style="font-weight:700">Fichiers</div><div style="font-size:12px;color:var(--text2)" id="statFile">0 GB • 0%</div></div><div style="text-align:right"><div style="font-weight:700" id="valFile">0 GB</div><div style="font-size:12px;color:var(--text2)">Le plus petit</div></div><div style="font-size:20px;margin-left:10px">›</div></div>
+      </div>
+    </div>
+
+    <div class="robot-thiero-fixed" onclick="parlerThiero()"><div class="robot-thiero">🤖</div><div class="nom-thiero">Robot Thiero</div></div>
+    <div class="sidebar"><div class="sidebar-item active" id="btnAccueil"><div class="sidebar-icon">🏠</div><div class="sidebar-label">Accueil</div></div><div class="sidebar-item" id="btnPlus"><div class="sidebar-icon">⋯</div><div class="sidebar-label">Plus</div></div></div>
+  </div>
+  <div class="modal" id="profilModal"><div class="modal-content"><h3>👤 Mon Profil</h3>
+    <div style="text-align:center;margin:15px 0"><div id="profilAvatar" style="width:60px;height:60px;background:var(--blue);border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700"></div><div id="profilEmail" style="margin-top:8px;font-weight:700"></div></div>
+    <div class="profil-info"><div>Stockage utilisé</div><div id="profilStockage" style="font-size:20px;font-weight:700;color:var(--green)">0 GB / 10 GB</div></div>
+    <button class="btn btn-secondary" style="width:100%;margin-bottom:10px" onclick="deconnexion()">🚪 Déconnexion</button>
+    <button class="btn btn-danger" style="width:100%" onclick="supprimerCompte()">🗑️ Supprimer mon compte</button>
+    <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="profilModal.style.display='none'">Fermer</button></div></div>
+
+  <div class="modal" id="adminPanelModal"><div class="modal-content"><h3>👑 Panneau Administrateur</h3>
+    <div class="menu-plus-item" onclick="ouvrirGestionUsers()"><div style="width:36px;height:36px;border-radius:10px;background:var(--blue);margin-right:12px;display:flex;align-items:center;justify-content:center">👥</div><div><div style="font-weight:600">Gérer les utilisateurs</div><div style="font-size:12px;color:var(--text2)">Voir tous les comptes + fichiers</div></div></div>
+    <div class="menu-plus-item" onclick="ouvrirCoffreAdmin()"><div style="width:36px;height:36px;border-radius:10px;background:var(--green);margin-right:12px;display:flex;align-items:center;justify-content:center">💰</div><div><div style="font-weight:600">Coffres Administrateurs</div><div style="font-size:12px;color:var(--text2)">Gains et statistiques</div></div></div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="adminPanelModal.style.display='none'">Fermer</button></div></div>
+  <div class="modal" id="gestionUsersModal"><div class="modal-content"><h3>👥 Liste des Utilisateurs</h3><div id="usersList"></div><button class="btn btn-secondary" style="width:100%;margin-top:15px" onclick="gestionUsersModal.style.display='none'">Fermer</button></div></div>
+
+  <div class="modal" id="coffreAdminModal"><div class="modal-content"><h3>🔒 Coffres Administrateurs</h3>
+    <div id="coffreLogin"><input type="password" id="coffreCode" class="input" placeholder="Entrez le code secret"><button class="btn btn-primary" onclick="deverrouillerCoffre()">Entrer</button></div>
+    <div id="coffreContent" class="hidden">
+      <div style="margin:15px 0;padding:15px;background:var(--border);border-radius:10px"><div>Gains Publicités</div><div style="font-size:24px;font-weight:700;color:var(--green)" id="gainsPub">0.00 $</div></div>
+      <div style="margin:15px 0;padding:15px;background:var(--border);border-radius:10px"><div>Gains d'Abonnement</div><div style="font-size:24px;font-weight:700;color:var(--green)">340.00 $</div></div>
+      <div style="margin:15px 0;padding:15px;background:linear-gradient(135deg,#1E40AF,var(--blue));border-radius:10px"><div>Argent Total</div><div style="font-size:28px;font-weight:700;color:white" id="argentTotal">340.00 $</div></div>
+    </div>
+    <button class="btn btn-secondary" style="width:100%;margin-top:15px" onclick="coffreAdminModal.style.display='none'">Fermer</button></div></div>
+
+  <div class="modal" id="pubModal"><div class="modal-content"><h3>📢 Publicité</h3><p style="text-align:center;color:var(--text2)">Regardez cette pub</p>
+  <div id="adSlot"></div>
+  <button class="btn btn-primary" style="width:100%;margin-top:15px" onclick="fermerPub()">Fermer</button></div></div>
+
+  <div class="modal" id="plusModal"><div class="modal-content"><h3 style="margin-bottom:15px">⋯ Plus d'options</h3><div class="menu-plus-item" onclick="ouvrirAide()"><div style="width:36px;height:36px;border-radius:10px;background:#EF4444;margin-right:12px;display:flex;align-items:center;justify-content:center">🆘</div><div><div style="font-weight:600">Centre d'Aide</div><div style="font-size:12px;color:var(--text2)">FAQ et support</div></div></div><div class="menu-plus-item" onclick="ouvrirLangue()"><div style="width:36px;height:36px;border-radius:10px;background:#10B981;margin-right:12px;display:flex;align-items:center;justify-content:center">🌍</div><div><div style="font-weight:600">Langue - Tous les pays</div><div style="font-size:12px;color:var(--text2)">Tape pour chercher</div></div></div><div class="menu-plus-item" onclick="ouvrirSecurite()"><div style="width:36px;height:36px;border-radius:10px;background:var(--blue);margin-right:12px;display:flex;align-items:center;justify-content:center">🔒</div><div><div style="font-weight:600">Sécurité Biométrique</div><div style="font-size:12px;color:var(--text2)">Empreinte + Visage</div></div></div><div class="menu-plus-item" onclick="ouvrirPartage()"><div style="width:36px;height:36px;border-radius:10px;background:#F59E0B;margin-right:12px;display:flex;align-items:center;justify-content:center">📤</div><div><div style="font-weight:600">Partager MaraSo</div><div style="font-size:12px;color:var(--text2)">Inviter des amis</div></div></div><div class="menu-plus-item" onclick="deconnexion()"><div style="width:36px;height:36px;border-radius:10px;background:#EF4444;margin-right:12px;display:flex;align-items:center;justify-content:center">🚪</div><div style="color:#EF4444"><div style="font-weight:600">Déconnexion</div><div style="font-size:12px;color:#FCA5A5">Quitter le compte</div></div></div><button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="plusModal.style.display='none'">Fermer</button></div></div>
+  <div class="modal" id="premiumModal"><div class="modal-content"><h3 style="text-align:center;margin-bottom:20px">🚀 Choisissez votre Plan Premium</h3><div class="plan-option" onclick="acheter(100)"><div style="display:flex;justify-content:space-between"><h4>Plan 100 GB</h4></div><div class="plan-price">4.99$<span style="font-size:12px;color:var(--text2)">/mois</span></div></div><div class="plan-option popular" onclick="acheter(500)"><div style="display:flex;justify-content:space-between"><h4>Plan 500 GB</h4><span style="background:#F59E0B;color:black;padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700">POPULAIRE</span></div><div class="plan-price">14.99$<span style="font-size:12px;color:var(--text2)">/mois</span></div></div><div class="plan-option" onclick="acheter(2000)"><div style="display:flex;justify-content:space-between"><h4>Plan 2 TB</h4></div><div class="plan-price">49.99$<span style="font-size:12px;color:var(--text2)">/mois</span></div></div><button class="btn btn-secondary" style="width:100%;margin-top:10px" onclick="premiumModal.style.display='none'">Fermer</button></div></div>
+  <div class="modal" id="stockageModal"><div class="modal-content"><h3>📊 Stockage MaraSo</h3><div id="stockageTotalDetail" style="font-weight:700">0 GB sur 10 GB utilisé</div><div class="storage-bar" id="storageBar"></div><div class="storage-row"><div style="width:36px;height:36px;border-radius:10px;background:var(--red);margin-right:12px;display:flex;align-items:center;justify-content:center">🎥</div><div style="flex:1"><div style="font-weight:600">Vidéos</div><div style="font-size:12px;color:var(--text2)">Dernière utilisation: Aujourd'hui</div></div><div style="font-weight:700" id="stockVideo">0 GB</div></div><div class="storage-row"><div style="width:36px;height:36px;border-radius:10px;background:#007AFF;margin-right:12px;display:flex;align-items:center;justify-content:center">🖼️</div><div style="flex:1"><div style="font-weight:600">Photos</div><div style="font-size:12px;color:var(--text2)">Dernière utilisation: Aujourd'hui</div></div><div style="font-weight:700" id="stockPhoto">0 GB</div></div><div class="storage-row"><div style="width:36px;height:36px;border-radius:10px;background:#5856D6;margin-right:12px;display:flex;align-items:center;justify-content:center">📄</div><div style="flex:1"><div style="font-weight:600">Fichiers</div><div style="font-size:12px;color:var(--text2)">Dernière utilisation: Hier</div></div><div style="font-weight:700" id="stockFile">0 GB</div></div><button class="btn btn-secondary" style="width:100%;margin-top:15px" onclick="stockageModal.style.display='none'">Fermer</button></div></div>
+  <div class="modal" id="detailModal"><div class="modal-content"><h3 id="detailTitle"></h3><div id="detailContent"></div><button class="btn btn-secondary" style="width:100%;margin-top:15px" onclick="detailModal.style.display='none'">Fermer</button></div></div>
+  <div class="modal" id="aideModal"><div class="modal-content"><h3>🆘 Centre d'Aide</h3><div class="file-item">Comment uploader un fichier?</div><div class="file-item">Comment passer au Premium?</div><div class="file-item">Contacter le support</div><button class="btn btn-secondary" style="width:100%;margin-top:15px" onclick="aideModal.style.display='none'">Fermer</button></div></div>
+  <div class="modal" id="langueModal"><div class="modal-content"><h3>🌍 Choisir la langue</h3><input type="text" id="langSearch" class="lang-input" placeholder="Tape: Français, English..." onkeyup="filterLangues(this.value)"><div id="langList" class="lang-list"></div><button class="btn btn-secondary" style="width:100%;margin-top:15px" onclick="langueModal.style.display='none'">Fermer</button></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7187529096321070" crossorigin="anonymous"></script>
+  <script>
+    // FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzCIsyNVvXwKmMVxMQ1wX4qaS3RAkshUo",
+      authDomain: "maraso-6a013.firebaseapp.com",
+      projectId: "maraso-6a013",
+      storageBucket: "maraso-6a013.firebasestorage.app",
+      messagingSenderId: "979310744263",
+      appId: "1:979310744263:android:6e498515d2e6c6e31124e2"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const storage = firebase.storage();
+    const db = firebase.firestore();
+
+    // TON ADMOB - PAS TOUCHÉ
+    const ADMOB = {app:"ca-app-pub-7187529096321070~7410324957",banner:"ca-app-pub-7187529096321070/6680109901",interstitial:"ca-app-pub-7187529096321070/6951572644",rewarded:"ca-app-pub-7187529096321070/5446919289"};
+    (adsbygoogle = window.adsbygoogle || []).push({google_ad_client: ADMOB.app, enable_page_level_ads: true});
+
+    const COFFRE_CODE = "8282";
+    const ADMIN_EMAIL = "balanzanf@gmail.com";
+    const ADMIN_PASSWORD = "82185042@Djilla";
+    const MAX_BONUS_PUB = 1000;
+    const STOCKAGE_BASE = 10 * 1024;
+
+    let users = [];
+    let compteurVideos = 0;
+    const usersData = localStorage.getItem('maraso_users');
+    if(usersData){
+      const temp = JSON.parse(usersData);
+      if(temp.length > 0 && typeof temp[0] === 'string'){
+        users = temp.map(email => ({email: email}));
+        localStorage.setItem('maraso_users', JSON.stringify(users));
+      } else { users = temp; }
+    }
+
+    let currentUser = localStorage.getItem('maraso_user');
+    let gainsPub = parseFloat(localStorage.getItem('gains_pub') || '0');
+    let adsWatched = parseInt(localStorage.getItem('ads_' + currentUser) || '0');
+    let bonusMB = parseInt(localStorage.getItem('bonus_' + currentUser) || '0');
+    let parrainFait = localStorage.getItem('parrain_fait_' + currentUser) === 'true';
+    let pubSource = '';
+
+    function viderCache(){localStorage.clear();toast("Cache vidé! Recharge la page");setTimeout(()=>location.reload(),1000)}
+    function checkAuth(){
+      if(!currentUser){authBlock.style.display='flex';appContent.classList.add('hidden')}
+      else{
+        authBlock.style.display='none';appContent.classList.remove('hidden');
+        userAvatar.textContent=currentUser.charAt(0).toUpperCase();
+        if(currentUser === ADMIN_EMAIL){adminBadge.classList.remove('hidden');planType.textContent='ILLIMITÉ'} else {adminBadge.classList.add('hidden');planType.textContent='GRATUIT'}
+        compteurVideos = parseInt(localStorage.getItem('compteur_' + currentUser) || '0');
+        updateUI(); calculerStockage();
+      }
+    }
+    checkAuth();
+
+    function calculerStockage(){
+      let files = JSON.parse(localStorage.getItem('fichiers_' + currentUser) || '[]');
+      let totalMB = files.reduce((acc,f)=> acc + parseFloat(f.taille), 0);
+      let totalGB = (totalMB / 1024).toFixed(2);
+      let limiteGB = 10 + (bonusMB/1024);
+      document.getElementById('stockageUtilise').innerText = totalGB + ' GB';
+      document.getElementById('stockageTotal').innerText = limiteGB.toFixed(2) + ' GB';
+      document.getElementById('profilStockage').innerText = totalGB + ' GB / ' + limiteGB.toFixed(2) + ' GB';
+      let videos = files.filter(f=>f.type==='video'); let photos = files.filter(f=>f.type==='photo'); let docs = files.filter(f=>f.type==='file');
+      let mbVideo = videos.reduce((a,f)=>a+parseFloat(f.taille),0); let mbPhoto = photos.reduce((a,f)=>a+parseFloat(f.taille),0); let mbFile = docs.reduce((a,f)=>a+parseFloat(f.taille),0);
+      document.getElementById('valVideo').innerText = (mbVideo/1024).toFixed(2) + ' GB';
+      document.getElementById('valPhoto').innerText = (mbPhoto/1024).toFixed(2) + ' GB';
+      document.getElementById('valFile').innerText = (mbFile/1024).toFixed(2) + ' GB';
+      document.getElementById('stockVideo').innerText = (mbVideo/1024).toFixed(2) + ' GB';
+      document.getElementById('stockPhoto').innerText = (mbPhoto/1024).toFixed(2) + ' GB';
+      document.getElementById('stockFile').innerText = (mbFile/1024).toFixed(2) + ' GB';
+      let pctVideo = totalMB>0? (mbVideo/totalMB)*100:0; let pctPhoto = totalMB>0? (mbPhoto/totalMB)*100:0; let pctFile = totalMB>0? (mbFile/totalMB)*100:0;
+      document.getElementById('statVideo').innerText = (mbVideo/1024).toFixed(2)+' GB • '+pctVideo.toFixed(0)+'%';
+      document.getElementById('statPhoto').innerText = (mbPhoto/1024).toFixed(2)+' GB • '+pctPhoto.toFixed(0)+'%';
+      document.getElementById('statFile').innerText = (mbFile/1024).toFixed(2)+' GB • '+pctFile.toFixed(0)+'%';
+      document.getElementById('storageBar').innerHTML = `<div style="width:${pctVideo}%;background:var(--red)"></div><div style="width:${pctPhoto}%;background:#007AFF"></div><div style="width:${pctFile}%;background:#5856D6"></div>`;
+      document.getElementById('stockageTotalDetail').innerText = totalGB + ' GB sur ' + limiteGB.toFixed(2) + ' GB utilisé';
+    }
+
+    function updateUI(){
+      document.getElementById('pubLeft').innerText = 3 - adsWatched;
+      document.getElementById('bonusUser').innerText = bonusMB;
+      if(adsWatched >= 3 || bonusMB >= MAX_BONUS_PUB){document.getElementById('btnPubReward').style.opacity = "0.5";document.getElementById('btnPubReward').innerText = bonusMB >= MAX_BONUS_PUB? "Limite 1GB atteinte" : "Reviens demain";}
+      if(parrainFait){document.getElementById('btnParrain').style.opacity = "0.5";document.getElementById('btnParrain').innerText = "Bonus 100MB déjà reçu";}
+    }
+
+    function showRewardedAd(){
+      if(bonusMB >= MAX_BONUS_PUB) return toast("Tu as déjà 1GB bonus pub");
+      if(adsWatched >= 3) return toast("Limite 3 pubs/jour atteinte");
+      pubSource = 'reward';
+      montrerPub();
+    }
+
+    function copierLienParrain(){
+      if(parrainFait) return toast("Tu as déjà reçu ton bonus de 100MB");
+      let lien = "https://maraso.app?ref=" + currentUser;
+      navigator.clipboard.writeText(lien);
+      parrainFait = true;
+      bonusMB += 100;
+      localStorage.setItem('parrain_fait_' + currentUser, 'true');
+      localStorage.setItem('bonus_' + currentUser, bonusMB);
+      toast("Lien copié! Invite 3 amis pour débloquer +100MB 🎉");
+      updateUI();
+      calculerStockage();
+    }
+
+    function montrerPub(){
+      pubModal.style.display='flex';
+      document.getElementById('adSlot').innerHTML = `<ins class="adsbygoogle" style="display:block" data-ad-client="${ADMOB.app}" data-ad-slot="${ADMOB.rewarded}" data-ad-format="fluid"></ins>`;
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    }
+
+    function fermerPub(){
+      pubModal.style.display='none';
+      if(pubSource === 'reward'){
+        adsWatched++;
+        bonusMB += 100;
+        localStorage.setItem('ads_' + currentUser, adsWatched);
+        localStorage.setItem('bonus_' + currentUser, bonusMB);
+        gainsPub += 0.03;
+        localStorage.setItem('gains_pub', gainsPub);
+        toast("+100MB ajoutés! Total: " + bonusMB + "MB");
+        updateUI();
+        calculerStockage();
+      } else {
+        toast("Merci");
+      }
+    }
+
+    function updateArgent(){
+      let gainsEl = document.getElementById('gainsPub');
+      if(gainsEl){
+        gainsEl.textContent = gainsPub.toFixed(2) + ' $';
+        let total = gainsPub + 340.00;
+        document.getElementById('argentTotal').textContent = total.toFixed(2) + ' $';
+      }
+    }
+
+    function demanderSecuriteAdmin(){adminPassCheck.value = "";adminAuthBlock.style.display = 'flex';}
+    function verifierAdmin(){
+      const pass = adminPassCheck.value;
+      if(pass === ADMIN_PASSWORD){adminAuthBlock.style.display = 'none';ouvrirPanelAdmin();toast("Bienvenue Admin 👑")}
+      else {toast("Mot de passe Admin incorrect ❌");}
+    }
+
+    function passwordFort(mdp){return mdp.length >= 8}
+
+    function login(){
+      const email=loginUser.value.trim();
+      const pass=loginPass.value;
+      if(!passwordFort(pass)){passError.classList.remove('hidden');return}
+      passError.classList.add('hidden');
+      if(email===ADMIN_EMAIL && pass===ADMIN_PASSWORD){currentUser=email}
+      else{
+        if(!users.find(u=>u.email===email)){users.push({email:email});localStorage.setItem('maraso_users',JSON.stringify(users))}
+        currentUser=email;
+      }
+      localStorage.setItem('maraso_user',currentUser);
+      checkAuth();
+    }
+
+    function deconnexion(){localStorage.removeItem('maraso_user');currentUser=null;checkAuth()}
+
+    function supprimerCompte(){
+      if(confirm("Supprimer définitivement ton compte?")){
+        localStorage.removeItem('fichiers_' + currentUser);
+        localStorage.removeItem('bonus_' + currentUser);
+        users = users.filter(u=>u.email!==currentUser);
+        localStorage.setItem('maraso_users', JSON.stringify(users));
+        deconnexion();
+        toast("Compte supprimé");
+      }
+    }
+
+    function ouvrirProfil(){
+      profilModal.style.display='flex';
+      document.getElementById('profilAvatar').innerText = currentUser.charAt(0).toUpperCase();
+      document.getElementById('profilEmail').innerText = currentUser;
+    }
+
+    function parlerThiero(){toast("Bonjour Patron! Je suis Robot Thiero 🤖")}
+    function ouvrirPanelAdmin(){adminPanelModal.style.display='flex'}
+
+    function ouvrirGestionUsers(){
+      adminPanelModal.style.display='none';
+      let html = '';
+      if(users.length === 0){html = '<p style="text-align:center;color:var(--text2)">Aucun utilisateur</p>'}
+      else {
+        users.forEach(u=>{
+          let fichiers = JSON.parse(localStorage.getItem('fichiers_' + u.email) || '[]');
+          let bonus = parseInt(localStorage.getItem('bonus_' + u.email) || '0');
+          let nbVideos = fichiers.filter(f => f.type === 'video').length;
+          let nbPhotos = fichiers.filter(f => f.type === 'photo').length;
+          let nbDocs = fichiers.filter(f => f.type === 'file').length;
+          html += `<div class="user-detail">
+            <b>Email:</b> ${u.email}<br>
+            <b>🎥 Vidéos:</b> ${nbVideos} | <b>🖼️ Photos:</b> ${nbPhotos} | <b>📄 Docs:</b> ${nbDocs}<br>
+            <b>Bonus:</b> ${bonus} MB<br>
+            <button class="btn btn-secondary" style="margin-top:5px;font-size:12px;padding:8px;width:48%" onclick="voirFichiers('${u.email}')">Voir détails</button>
+            <button class="btn btn-danger" style="margin-top:5px;font-size:12px;padding:8px;width:48%" onclick="supprimerUser('${u.email}')">Suppr</button>
+          </div>`
+        })
+      }
+      document.getElementById('usersList').innerHTML = html;
+      gestionUsersModal.style.display='flex';
+    }
+
+    function voirFichiers(email){
+      let fichiers = JSON.parse(localStorage.getItem('fichiers_' + email) || '[]');
+      let html = '<h4 style="margin-bottom:10px">Fichiers de: ' + email + '</h4>';
+      if(fichiers.length === 0){html += '<p style="text-align:center;color:var(--text2)">Aucun fichier</p>'}
+      else {
+        fichiers.forEach((f, i) => {
+          let icone = f.type==='video'?'🎬':f.type==='photo'?'📷':'📄';
+          html += `<div class="file-item" style="display:flex;justify-content:space-between;align-items:center">
+            <div>${icone} ${f.nom} - ${f.taille} MB</div>
+            <div>
+              <button class="btn-icon" onclick="telechargerFichier('${email}', ${i})">⬇️</button>
+              <button class="btn-icon" onclick="partagerFichier(${i})">📤</button>
+              <button class="btn-icon" onclick="supprimerFichier(${i})">🗑️</button>
+            </div>
+          </div>`
+        })
+      }
+      detailTitle.innerHTML = "Détails";
+      detailContent.innerHTML = html;
+      detailModal.style.display='flex';
+    }
+
+    function ouvrirDetail(type){
+      let files = JSON.parse(localStorage.getItem('fichiers_' + currentUser) || '[]');
+      let mesFiles = files.filter(f => f.type === type);
+      let html = '';
+      if(mesFiles.length === 0){html = '<p style="text-align:center;color:var(--text2)">Aucun fichier</p>'}
+      else {
+        mesFiles.forEach((f, i) => {
+          let icone = type==='video'?'🎬':type==='photo'?'📷':'📄';
+          html += `<div class="file-item" style="display:flex;justify-content:space-between;align-items:center">
+            <div>${icone} ${f.nom} - ${f.taille} MB</div>
+            <div>
+              <button class="btn-icon" onclick="telechargerFichier('${currentUser}', ${files.indexOf(f)})">⬇️</button>
+              <button class="btn-icon" onclick="partagerFichier(${files.indexOf(f)})">📤</button>
+              <button class="btn-icon" onclick="supprimerFichier(${files.indexOf(f)})">🗑️</button>
+            </div>
+          </div>`
+        })
+      }
+      const data = {video: {t:'🎥 Mes Vidéos',d: html},photo: {t:'🖼️ Mes Photos',d: html},file: {t:'📄 Mes Fichiers',d: html}};
+      compteurVideos++;
+      if(compteurVideos % 3 === 1){
+        pubSource = 'dossier';montrerPub();
+        setTimeout(()=>{fermerPub();detailTitle.innerHTML = data[type].t;detailContent.innerHTML = data[type].d;detailModal.style.display='flex';}, 3000)
+      } else {
+        detailTitle.innerHTML = data[type].t;detailContent.innerHTML = data[type].d;detailModal.style.display='flex';
+      }
+      localStorage.setItem('compteur_' + currentUser, compteurVideos);
+    }
+
+    async function telechargerFichier(email, index){
+      let files = JSON.parse(localStorage.getItem('fichiers_' + email) || '[]');
+      let f = files[index];
+      if(!f) return toast("Fichier introuvable");
+      if(f.url){
+        window.open(f.url, '_blank');
+      } else {
+        toast("Ancien fichier. Re-upload pour avoir le lien");
+      }
+    }
+
+    function partagerFichier(index){
+      let files = JSON.parse(localStorage.getItem('fichiers_' + currentUser) || '[]');
+      let f = files[index];
+      if(f && f.url){
+        navigator.clipboard.writeText(f.url);
+        toast("Lien copié: " + f.nom);
+      } else {
+        toast("Pas de lien pour ce fichier");
+      }
+    }
+
+    async function supprimerFichier(index){
+      if(confirm("Supprimer ce fichier?")){
+        let files = JSON.parse(localStorage.getItem('fichiers_' + currentUser) || '[]');
+        let f = files[index];
+        if(f && f.path){
+          try{ await storage.ref(f.path).delete(); }catch(e){}
+        }
+        files.splice(index,1);
+        localStorage.setItem('fichiers_' + currentUser, JSON.stringify(files));
+        toast("Fichier supprimé 🗑️");
+        calculerStockage();
+        detailModal.style.display='none';
+      }
+    }
+
+    function supprimerUser(email){
+      if(confirm("Supprimer " + email + "?")){
+        users = users.filter(u => u.email!== email);
+        localStorage.setItem('maraso_users', JSON.stringify(users));
+        localStorage.removeItem('fichiers_' + email);
+        localStorage.removeItem('bonus_' + email);
+        toast("Utilisateur supprimé");
+        ouvrirGestionUsers();
+      }
+    }
+
+    function ouvrirCoffreAdmin(){
+      adminPanelModal.style.display='none';
+      coffreLogin.classList.remove('hidden');
+      coffreContent.classList.add('hidden');
+      coffreCode.value='';
+      coffreAdminModal.style.display='flex';
+      updateArgent();
+    }
+
+    function deverrouillerCoffre(){
+      if(coffreCode.value===COFFRE_CODE){
+        coffreLogin.classList.add('hidden');
+        coffreContent.classList.remove('hidden')
+      }else{toast("Code incorrect")}
+    }
+
+    function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2500)}
+
+    btnAccueil.onclick=()=>{document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));btnAccueil.classList.add('active');window.scrollTo(0,0);};
+    btnPlus.onclick=()=>{document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));btnPlus.classList.add('active');plusModal.style.display='flex'};
+    btnGererStockage.onclick=()=>{stockageModal.style.display='flex'};
+    btnOuvrirPremium.onclick=()=>{premiumModal.style.display='flex'};
+    btnTeleverser.onclick=()=>{inputFile.click()};
+
+    inputFile.onchange= async ()=>{
+      if(inputFile.files.length > 0){
+        let files = JSON.parse(localStorage.getItem('fichiers_' + currentUser) || '[]');
+        let limiteMB = STOCKAGE_BASE + bonusMB;
+        let utiliseMB = files.reduce((acc,f)=> acc + parseFloat(f.taille), 0);
+        let dernierType = '';
+
+        for(let i=0; i<inputFile.files.length; i++){
+          let f = inputFile.files[i];
+          let tailleMB = (f.size/1024/1024).toFixed(2);
+          if(utiliseMB + parseFloat(tailleMB) > limiteMB){
+            toast("Stockage plein! Passe au Premium");
+            break;
+          }
+          let type = f.type.startsWith('video')? 'video' : f.type.startsWith('image')? 'photo' : 'file';
+          dernierType = type;
+          let filePath = `users/${currentUser}/${Date.now()}_${f.name}`;
+          let storageRef = storage.ref(filePath);
+          toast("Upload en cours: " + f.name);
+          try{
+            let snap = await storageRef.put(f);
+            let url = await snap.ref.getDownloadURL();
+            files.push({nom: f.name, taille: tailleMB, type: type, url: url, path: filePath});
+            utiliseMB += parseFloat(tailleMB);
+            toast("Uploadé: " + f.name);
+          }catch(e){toast("Erreur upload: " + e.message)}
+        }
+        localStorage.setItem('fichiers_' + currentUser, JSON.stringify(files));
+        calculerStockage();
+
+        // OUVRE LE DOSSIER TOUT SEUL APRÈS UPLOAD
+        if(dernierType === 'video') ouvrirDetail('video');
+        if(dernierType === 'photo') ouvrirDetail('photo');
+        if(dernierType === 'file') ouvrirDetail('file');
+      }
+    };
+
+    function ouvrirAide(){aideModal.style.display='flex'}
+    function ouvrirLangue(){langueModal.style.display='flex';filterLangues('')}
+    function ouvrirSecurite(){toast('Sécurité Biométrique: Activez empreinte dans Paramètres téléphone 🔒')}
+    function ouvrirPartage(){navigator.share? navigator.share({title:'MaraSo', text:'Télécharge MaraSo'}) : navigator.clipboard.writeText("https://maraso.app"); toast("Lien copié")}
+
+    function acheter(gb){
+      premiumModal.style.display='none';
+      planType.textContent='PREMIUM';
+      let prix = gb===100?4.99:gb===500?14.99:49.99;
+      toast(`Premium ${gb}GB activé pour ${prix}$ ✅`)
+    }
+
+    const langues = ["Français 🇫🇷","English 🇬🇧","Español 🇪🇸","Deutsch 🇩🇪","Português 🇵🇹","Italiano 🇮🇹","العربية 🇸🇦","中文 🇨🇳","日本語 🇯🇵","한국어 🇰🇷","Русский 🇷🇺","हिन्दी 🇮🇳","বাংলা 🇧🇩","Türkçe 🇹🇷","Tiếng Việt 🇻🇳","Bahasa Indonesia 🇮🇩","ภาษาไทย 🇹🇭","فارسی 🇮🇷","Polski 🇵🇱","Nederlands 🇳🇱","Română 🇷🇴","Magyar 🇭🇺","Čeština 🇨🇿","Svenska 🇸🇪","Dansk 🇩🇰","Suomi 🇫🇮","Norsk 🇳🇴","Ελληνικά 🇬🇷","עברית 🇮🇱","Bamanankan 🇲🇱","Wolof 🇸🇳","Pulaar 🇲🇷","Soninké 🇲🇱","Hassaniya 🇲🇷","Zarma 🇳🇪","Hausa 🇳🇬","Yoruba 🇳🇬","Igbo 🇳🇬","Swahili 🇹🇿","Amharique 🇪🇹","Afrikaans 🇿🇦","Zoulou 🇿🇦","Xhosa 🇿🇦","Kinyarwanda 🇷🇼","Lingala 🇨🇬","Tshiluba 🇨🇩","Tamazight 🇲🇦","Somali 🇸🇴","Oromo 🇪🇹","Tigrinya 🇪🇷","Malagasy 🇲🇬","Albanais 🇦🇱","Arménien 🇦🇲","Azerbaïdjanais 🇦🇿","Basque 🇪🇸","Biélorusse 🇧🇾","Bosniaque 🇧🇦","Bulgare 🇧🇬","Catalan 🇪🇸","Croate 🇭🇷","Estonien 🇪🇪","Géorgien 🇬🇪","Islandais 🇮🇸","Irlandais 🇮🇪","Letton 🇱🇻","Lituanien 🇱🇹","Macédonien 🇲🇰","Maltais 🇲🇹","Moldave 🇲🇩","Monténégrin 🇲🇪","Serbe 🇷🇸","Slovaque 🇸🇰","Slovène 🇸🇮","Ukrainien 🇺🇦","Gallois 🏴󠁧󠁢󠁷󠁬󠁳󠁿","Gujarati 🇮🇳","Kannada 🇮🇳","Malayalam 🇮🇳","Marathi 🇮🇳","Népalais 🇳🇵","Pendjabi 🇮🇳","Tamoul 🇮🇳","Telugu 🇮🇳","Ourdou 🇵🇰","Sinhala 🇱🇰","Tagalog 🇵🇭","Malais 🇲🇾","Khmer 🇰🇭","Laotien 🇱🇦","Birman 🇲🇲","Mongol 🇲🇳","Kazakh 🇰🇿","Ouzbek 🇺🇿","Tadjik 🇹🇯","Turkmène 🇹🇲","Kirghize 🇰🇬","Dogon 🇲🇱","Bozo 🇲🇱","Bobo 🇲🇱","Minianka 🇲🇱","Sénoufo 🇲🇱","Kassonké 🇲🇱","Songhaï 🇲🇱","Maure 🇲🇷","Tamasheq 🇲🇱","Peul 🇲🇱","Krio 🇸🇱","Mendé 🇸🇱","Temné 🇸🇱","Akan 🇬🇭","Ewe 🇬🇭","Ga 🇬🇭","Shona 🇿🇼","Ndebele 🇿🇼","Bemba 🇿🇲","Nyanja 🇿🇲","Sesotho 🇱🇸","Setswana 🇧🇼","Sepedi 🇿🇦","Xitsonga 🇿🇦","Venda 🇿🇦","Kikuyu 🇰🇪","Luo 🇰🇪","Kalenjin 🇰🇪","Luganda 🇺🇬","Runyankole 🇺🇬","Ateso 🇺🇬","Kinyarwanda 🇷🇼","Kirundi 🇧🇮","Comorien 🇰🇲","Créole mauricien 🇲🇺","Seychellois 🇸🇨","Maltais 🇲🇹","Frioulan 🇮🇹","Sardegna 🇮🇹","Sicilien 🇮🇹","Napolitain 🇮🇹","Corse 🇫🇷","Breton 🇫🇷","Occitan 🇫🇷","Alsacien 🇫🇷","Basque 🇪🇸","Galicien 🇪🇸","Asturien 🇪🇸","Catalan 🇪🇸","Aranais 🇪🇸","Guarani 🇵🇾","Quechua 🇵🇪","Aymara 🇧🇴","Nahuatl 🇲🇽","Maya 🇲🇽","Inuktitut 🇨🇦","Cherokee 🇺🇸","Navajo 🇺🇸","Hawaïen 🇺🇸","Maori 🇳🇿","Fidjien 🇫🇯","Tongien 🇹🇴","Samoan 🇼🇸","Tahitien 🇵🇫","Japonais 🇯🇵","Coréen 🇰🇷","Chinois Mandarin 🇨🇳","Chinois Cantonais 🇭🇰","Tibétain 🇨🇳","Mongol 🇲🇳","Thaï 🇹🇭","Vietnamien 🇻🇳","Khmer 🇰🇭","Laotien 🇱🇦","Birman 🇲🇲","Tamoul 🇮🇳","Télougou 🇮🇳","Kannada 🇮🇳","Malayalam 🇮🇳","Gujarati 🇮🇳","Pendjabi 🇮🇳","Marathi 🇮🇳","Bengali 🇧🇩","Népalais 🇳🇵","Cinghalais 🇱🇰","Ourdou 🇵🇰","Pashto 🇦🇫","Dari 🇦🇫","Kurde 🇹🇷","Persan 🇮🇷","Arabe 🇸🇦","Hébreu 🇮🇱","Turc 🇹🇷","Azéri 🇦🇿","Turkmène 🇹🇲","Kazakh 🇰🇿","Ouzbek 🇺🇿","Tatar 🇷🇺","Bachkir 🇷🇺","Tchouvache 🇷🇺","Yakut 🇷🇺","Géorgien 🇬🇪","Arménien 🇦🇲","Azerbaïdjanais 🇦🇿","Russe 🇷🇺","Ukrainien 🇺🇦","Biélorusse 🇧🇾","Polonais 🇵🇱","Tchèque 🇨🇿","Slovaque 🇸🇰","Hongrois 🇭🇺","Roumain 🇷🇴","Bulgare 🇧🇬","Serbe 🇷🇸","Croate 🇭🇷","Bosniaque 🇧🇦","Macédonien 🇲🇰","Albanais 🇦🇱","Grec 🇬🇷","Turc 🇹🇷","Allemand 🇩🇪","Anglais 🇬🇧","Français 🇫🇷","Espagnol 🇪🇸","Portugais 🇵🇹","Italien 🇮🇹","Néerlandais 🇳🇱","Danois 🇩🇰","Norvégien 🇳🇴","Suédois 🇸🇪","Finnois 🇫🇮","Islandais 🇮🇸","Estonien 🇪🇪","Letton 🇱🇻","Lituanien 🇱🇹",];
+    function filterLangues(val){
+      const list = document.getElementById('langList');
+      const filtered = langues.filter(l => l.toLowerCase().includes(val.toLowerCase()));
+      list.innerHTML = filtered.map(l => `<div class="file-item" onclick="selectLang('${l}')">${l}</div>`).join('');
+    }
+    function selectLang(lang){toast(`Langue sélectionnée: ${lang}`);langueModal.style.display='none'}
+
+    function recherFichier(val){
+      let files = JSON.parse(localStorage.getItem('fichiers_' + currentUser) || '[]');
+      let result = files.filter(f => f.nom.toLowerCase().includes(val.toLowerCase()));
+      if(val.length > 0){
+        let html = '';
+        result.forEach((f, i) => {
+          let icone = f.type==='video'?'🎬':f.type==='photo'?'📷':'📄';
+          html += `<div class="file-item" style="display:flex;justify-content:space-between;align-items:center">
+            <div>${icone} ${f.nom} - ${f.taille} MB</div>
+            <div>
+              <button class="btn-icon" onclick="telechargerFichier('${currentUser}', ${files.indexOf(f)})">⬇️</button>
+              <button class="btn-icon" onclick="supprimerFichier(${files.indexOf(f)})">🗑️</button>
+            </div>
+          </div>`
+        });
+        detailTitle.innerHTML = "Résultats: " + val;
+        detailContent.innerHTML = html || '<p>Aucun résultat</p>';
+        detailModal.style.display='flex';
+      }
+    }
+  </script>
+</body>
+</html>
